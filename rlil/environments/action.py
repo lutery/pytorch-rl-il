@@ -44,6 +44,8 @@ def squash_action(raw, tanh_scale=None, tanh_mean=None, action_space=None):
             dtype=torch.float32,
             device=raw.device)
 
+    # torch.tanh(raw) * tanh_scale：将模型预测的值缩放到动作的空间
+    #  + tanh_mean： 将模型预测的值偏移到动作空间的范围
     actions = torch.tanh(raw) * tanh_scale + tanh_mean
     return actions
 

@@ -56,14 +56,16 @@ def sac(
         disable_on_policy_mode()
 
         device = get_device()
-        q_1_model = fc_q(env).to(device)
+        q_1_model = fc_q(env).to(device) # 构建预测Q值的模型
         q_1_optimizer = Adam(q_1_model.parameters(), lr=lr_q)
+        # 构建Q值预测网络
         q_1 = QContinuous(
             q_1_model,
             q_1_optimizer,
             name='q_1'
         )
 
+        # sac网络需要构建两个Q值预测
         q_2_model = fc_q(env).to(device)
         q_2_optimizer = Adam(q_2_model.parameters(), lr=lr_q)
         q_2 = QContinuous(
@@ -72,6 +74,7 @@ def sac(
             name='q_2'
         )
 
+        # 状态价值预测网络
         v_model = fc_v(env).to(device)
         v_optimizer = Adam(v_model.parameters(), lr=lr_v)
         v = VNetwork(
@@ -81,6 +84,7 @@ def sac(
             name='v',
         )
 
+        # 连续动作策略预测网络
         policy_model = fc_soft_policy(env).to(device)
         policy_optimizer = Adam(policy_model.parameters(), lr=lr_pi)
         policy = SoftDeterministicPolicy(
@@ -89,9 +93,11 @@ def sac(
             env.action_space,
         )
 
+        # todo 这是什么？
         if use_apex:
             enable_apex()
         set_n_step(n_step=n_step, discount_factor=discount_factor)
+        # 构建经验重放缓冲区
         replay_buffer = ExperienceReplayBuffer(
             replay_buffer_size, env,
             prioritized=prioritized or use_apex)

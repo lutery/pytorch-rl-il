@@ -12,7 +12,7 @@ from .base import Agent, LazyAgent
 
 class SAC(Agent):
     """
-    Soft Actor-Critic (SAC).
+    Soft Actor-Critic (SAC). 构建SAC Agent
     SAC is a proposed improvement to DDPG that replaces the standard
     mean-squared Bellman error (MSBE) objective with a "maximum entropy"
     objective that impoves exploration. It also uses a few other tricks,
@@ -39,6 +39,7 @@ class SAC(Agent):
                  q_1,
                  q_2,
                  v,
+                 # 以下是一些常用的SAC算法的超参数
                  discount_factor=0.99,
                  entropy_target=-2.,
                  lr_temperature=1e-4,
@@ -81,14 +82,14 @@ class SAC(Agent):
              weights, indexes) = self.replay_buffer.sample(self.minibatch_size)
 
             # Target actions come from *current* policy
-            _actions, _log_probs = self.policy.no_grad(states)
+            _actions, _log_probs = self.policy.no_grad(states) # 获取预测动作的和动作的log概率值用来充当动作熵
             # compute targets for Q and V
             q_targets = rewards + self.discount_factor * \
-                self.v.target(next_states)
+                self.v.target(next_states) # 计算bellman的q值
             v_targets = torch.min(
                 self.q_1.target(states, Action(_actions)),
                 self.q_2.target(states, Action(_actions)),
-            ) - self.temperature * _log_probs
+            ) - self.temperature * _log_probs # 计算目标状态Q值中的最小值
 
             # update Q and V-functions
             q_1_values = self.q_1(states, actions)
@@ -128,6 +129,9 @@ class SAC(Agent):
         return len(self.replay_buffer) > self.replay_start_size
 
     def make_lazy_agent(self, evaluation=False, store_samples=True):
+        '''
+        看起来是构建一个复制sac算法的Agent对象
+        '''
         policy_model = deepcopy(self.policy.model)
         q_model = deepcopy(self.q_1.model)
         v_target_model = deepcopy(self.v._target._target)
@@ -170,7 +174,7 @@ class SACLazyAgent(LazyAgent):
             self._policy_model.eval()
 
     def act(self, states, reward):
-        super().act(states, reward)
+        super().act(states, reward) # 主要是构建一个当前时刻的存储对象，存储当前时刻的信息，比如这里就是存储了状态和奖励
         self._states = states
         with torch.no_grad():
             if self._evaluation:

@@ -11,6 +11,7 @@ DEFAULT_CHECKPOINT_FREQUENCY = 200
 class Approximation():
     '''
     Base function approximation object.
+    这个类似Train，主要在这里对模型进行训练优化
 
     This defines a Pytorch-based function approximation object that
     wraps key functionality useful for reinforcement learning, including

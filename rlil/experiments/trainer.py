@@ -47,6 +47,7 @@ class Trainer:
             max_train_steps=np.inf,
             train_minutes=np.inf
     ):
+        # todo 后面标注
         self._agent = agent
         self._sampler = sampler
         self._eval_sampler = eval_sampler
@@ -63,24 +64,25 @@ class Trainer:
         call_seed()
 
     def start_training(self):
-        self._train_start_time = time.time()
+        self._train_start_time = time.time() # 用于总体训练时间的记录
 
         while not self._done():
             # training
-            iter_start_time = time.time()
+            iter_start_time = time.time() # 用于单次训练时间的记录
             train_steps = self._writer.train_steps
 
             # sampling for training
             if self._sampler is not None:
-                lazy_agent = self._agent.make_lazy_agent()
+                lazy_agent = self._agent.make_lazy_agent() # todo 为什么单独做一个备份用来采样
                 self._sampler.start_sampling(lazy_agent,
                                              start_info=self._get_current_info(),
-                                             worker_episodes=1)
+                                             worker_episodes=1) # 
 
                 sample_result = \
                     self._sampler.store_samples(timeout=self._timeout)
 
                 for sample_info in sample_result.values():
+                    # 记录步数和获取的奖励
                     self._writer.sample_frames += sum(sample_info["frames"])
                     self._writer.sample_episodes += len(sample_info["frames"])
                     # training proportional to num of episodes
@@ -88,9 +90,9 @@ class Trainer:
                                      self._train_per_episode)
                     for _ in range(num_trains):
                         if not is_on_policy_mode():
-                            self._agent.train()
+                            self._agent.train() # 如果是无法使用历史样本数据的强化学习算法，则直接进行训练
 
-            self._agent.train()
+            self._agent.train() # 如果不是则在采集样本后进行统一训练
 
             training_msg = {
                 "training time [sec]": round(time.time() - iter_start_time, 2),

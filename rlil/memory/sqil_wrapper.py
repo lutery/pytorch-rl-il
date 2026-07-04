@@ -10,6 +10,7 @@ from .gae_wrapper import GaeWrapper
 
 class SqilWrapper(BaseBufferWrapper):
     """
+    构建SQIl的缓冲区
     SQIL is a behavior cloning method which regularizes the 
     reward to sparse by giving the agent a constant 
     reward of r = +1 for matching the demonstrated action in 

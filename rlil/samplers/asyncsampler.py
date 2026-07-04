@@ -7,11 +7,11 @@ from rlil.environments import State, Action
 from rlil.samplers import Sampler
 from collections import defaultdict, namedtuple
 
-
+# 这是一个构建每次训练时传入当前训练进度的信息
 StartInfo = namedtuple("StartInfo",
-                       ["sample_frames",
-                        "sample_episodes",
-                        "train_steps"],
+                       ["sample_frames", # 训练的帧数
+                        "sample_episodes", # 训练的生命周期数
+                        "train_steps"], # 训练的总步数
                        defaults=(None, ) * 3)
 
 
@@ -31,9 +31,9 @@ class Worker:
     def sample(self, lazy_agent, worker_frames, worker_episodes):
         """
         Args:
-            lazy_agent (rlil.agent.LazyAgent): agent for sampling
-            worker_frames (int): number of frames to collect
-            worker_episodes (int): number of episodes to collect
+            lazy_agent (rlil.agent.LazyAgent): agent for sampling 一个强化学习算法Agent，应该主要是用来采样动作
+            worker_frames (int): number of frames to collect 这个是配置每次采样需要执行的步数
+            worker_episodes (int): number of episodes to collect 这是控制进行采样时最多走多少步
 
         Returns:
             sample_info (StartInfo):
@@ -44,7 +44,7 @@ class Worker:
             (States, Actions, rewards, NextStates)
         """
 
-        sample_info = {"frames": [], "returns": []}
+        sample_info = {"frames": [], "returns": []} # 构建采样的返回信息：步数和奖励reward
         lazy_agent.set_replay_buffer(self._env)
 
         # Sample until it reaches worker_frames or worker_episodes.
@@ -52,7 +52,7 @@ class Worker:
                 and len(sample_info["frames"]) < worker_episodes:
 
             self._env.reset()
-            action = lazy_agent.act(self._env.state, self._env.reward)
+            action = lazy_agent.act(self._env.state, self._env.reward) # 在这个里面会在每一步的时候构建一个当前步的对象存储样本
             _return = 0
             _frames = 0
 
@@ -74,6 +74,7 @@ class Worker:
 
 class AsyncSampler(Sampler):
     """
+    构建异步采样器
     AsyncSampler collects samples with asynchronous workers.
     All the workers have the same agent, which is given by the argument
     of the start_sampling method.
@@ -84,15 +85,16 @@ class AsyncSampler(Sampler):
             env,
             num_workers=1,
     ):
+        # todo 后面是怎么运行的
         self._env = env
         seed = call_seed()
         self._workers = [Worker.remote(env.duplicate, seed+i)
                          for i in range(num_workers)]
-        self._work_ids = {worker: None for worker in self._workers}
+        self._work_ids = {worker: None for worker in self._workers} # 存储每个Work对应的id和起始训练信息，用于判断这个work是否有分配工作，这个主要是用来持有ray分布式对象的异步操作对象，方便后续获取异步的执行结果
         self.replay_buffer = get_replay_buffer()
 
     def start_sampling(self,
-                       lazy_agent,
+                       lazy_agent, # 传入的是一个强化学习算的构建的Agent对象，比如SAC
                        start_info=StartInfo(),
                        worker_frames=np.inf,
                        worker_episodes=np.inf,
@@ -104,7 +106,9 @@ class AsyncSampler(Sampler):
 
         # start sample method if the worker is ready
         for worker in self._workers:
-            if self._work_ids[worker] is None:
+            if self._work_ids[worker] is None: # 防止重复派活
+                # .remote 是RAY调用远程对象需要使用的方法，真正执行的是
+                # .sample。这是一个异步对象，类似feature，可以用于获取异步对象的返回值
                 self._work_ids[worker] = \
                     {"id": worker.sample.remote(
                         lazy_agent, worker_frames, worker_episodes),
@@ -129,12 +133,12 @@ class AsyncSampler(Sampler):
             # if there is at least one finished worker
             if len(ready_id) > 0:
                 # merge results
-                sample_info, samples = ray.get(ready_id[0])
-                result[start_info]["frames"] += sample_info["frames"]
-                result[start_info]["returns"] += sample_info["returns"]
+                sample_info, samples = ray.get(ready_id[0]) # 从远程获取制定id的对象的返回值
+                result[start_info]["frames"] += sample_info["frames"] # 更新执行的步数
+                result[start_info]["returns"] += sample_info["returns"] # 更新获取的奖励
 
-                self._work_ids[worker] = None
+                self._work_ids[worker] = None # 某个样本采集已经结束了则将其设置为None，方便后续部署新的任务
                 if not evaluation:
-                    self.replay_buffer.store(samples, priorities=samples.weights)
+                    self.replay_buffer.store(samples, priorities=samples.weights) # 将样本存储起来
 
         return result

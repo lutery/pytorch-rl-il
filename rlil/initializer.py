@@ -125,6 +125,7 @@ _NSTEP = 1
 _DISCOUNT_FACTOR = 0.95
 
 
+# todo 这是什么？
 def set_n_step(n_step, discount_factor=0.95):
     global _NSTEP, _DISCOUNT_FACTOR
     _NSTEP = n_step

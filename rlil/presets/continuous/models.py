@@ -7,6 +7,14 @@ from rlil import nn
 
 
 def fc_q(env, hidden1=400, hidden2=300):
+    '''
+    全连接层预测Q值
+    看来这里是环境的维度和动作维度，看来是通过环境的状态和动作来预测Q值
+
+    env: 环境
+    hidden1、hidden2: 隐藏层的维度
+    '''
+
     return nn.Sequential(
         nn.Linear(env.state_space.shape[0] +
                   env.action_space.shape[0], hidden1),
@@ -18,6 +26,10 @@ def fc_q(env, hidden1=400, hidden2=300):
 
 
 def fc_v(env, hidden1=400, hidden2=300):
+    '''
+    状态价值预测网络
+    
+    '''
     return nn.Sequential(
         nn.Linear(env.state_space.shape[0], hidden1),
         nn.LeakyReLU(),
@@ -48,6 +60,9 @@ def fc_deterministic_noisy_policy(env, hidden1=400, hidden2=300):
 
 
 def fc_soft_policy(env, hidden1=400, hidden2=300):
+    '''
+    全连接网络，根据环境状态预测动作的均值和 log(σ²) 
+    '''
     return nn.Sequential(
         nn.Linear(env.state_space.shape[0], hidden1),
         nn.LeakyReLU(),

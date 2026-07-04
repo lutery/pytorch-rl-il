@@ -33,7 +33,7 @@ class Experiment:
         # set writer
         if agent_name is None:
             agent_name = agent_fn.__name__[1:].replace("_", "-")
-        writer = self._make_writer(agent_name, env.name, exp_info)
+        writer = self._make_writer(agent_name, env.name, exp_info) # 创建一个训练数据记录器
         message = "\n# Experiment: " + exp_info
         message += "  \n# Parameters:  \n"
         message += json.dumps(args_dict, indent=4,
@@ -52,7 +52,7 @@ class Experiment:
         writer.add_text("exp_summary", message)
         set_writer(writer)
 
-        # set logger
+        # set logger 
         logger = get_logger()
         handler = logging.FileHandler(
             os.path.join(writer.log_dir, "logger.log"))

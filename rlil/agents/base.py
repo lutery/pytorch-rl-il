@@ -7,6 +7,7 @@ from rlil.utils import Samples
 class Agent(ABC):
     """
     Abstract agent class
+    通用的Agent，有动作预测、训练、load模型的方法
     """
 
     @abstractmethod

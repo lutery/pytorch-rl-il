@@ -3,6 +3,7 @@ from rlil.initializer import set_replay_buffer, get_replay_buffer
 from rlil.memory import ExperienceReplayBuffer, SqilWrapper
 
 
+# 这里是函数装饰器，用来后续传入env环境
 def sqil(
         transitions=None,
         base_agent_fn=None,
@@ -22,14 +23,14 @@ def sqil(
         replay_buffer_size (int): Maximum number of experiences to store in the replay buffer.
     """
     def _sqil(env):
-        base_agent = base_agent_fn(env)
-        expert_replay_buffer = ExperienceReplayBuffer(1e7, env)
-        if transitions is not None:
+        base_agent = base_agent_fn(env) # 创建基础环境，看 `rlil/presets/continuous/sac.py` 
+        expert_replay_buffer = ExperienceReplayBuffer(1e7, env) # 经验重放缓冲区，专家数据的经验重放缓冲区
+        if transitions is not None: # 如果有传入专家数据，则将专家数据放到经验重放缓冲区
             samples = expert_replay_buffer.samples_from_cpprb(
                 transitions, device="cpu")
             expert_replay_buffer.store(samples)
 
-        replay_buffer = get_replay_buffer()
+        replay_buffer = get_replay_buffer() # 这里应该是SAC经验重放缓冲区，用于采集训练数据
         replay_buffer = SqilWrapper(replay_buffer,
                                     expert_replay_buffer)
         set_replay_buffer(replay_buffer)
